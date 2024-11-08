@@ -2,6 +2,10 @@
   <div id="canvas" ref="wrapper" class="w-[75%] h-full "> </div>
   <div id="js-properties-panel" class="w-[25%] border" />
 
+  <div class="absolute left-10 bottom-32">
+    <input class="border rounded p-2" v-model="propertyValue" />
+  </div>
+
   <button class="absolute left-10 bottom-10 z-10 px-5 py-2 bg-red-100">Export</button>
   <div class="absolute z-10 bottom-20 left-10 px-5 py-2 bg-blue-100">propertyValue: {{ propertyValue }}</div>
 </template>
@@ -79,13 +83,18 @@ onMounted(() => {
         zeebe: ZeebeBpmnModdle
       }
     });
-    modeler.importXML(initialDiagram);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (modeler as any).importXML(initialDiagram);
 
     const { valueRef } = useReactiveEventProperty(modeler, 'Activity_0bry28l', 'name');
 
     watch(() => valueRef.value, (newValue: string, _oldValue: string) => {
-      console.log('old/new', _oldValue, newValue);
       propertyValue.value = newValue
+    });
+
+    watch(() => propertyValue.value, (newValue) => {
+      valueRef.value = newValue;
     });
 
   } catch (err) {

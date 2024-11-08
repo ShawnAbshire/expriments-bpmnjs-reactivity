@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 export function useReactiveEventProperty(modeler: any, activityId: string, property: string) {
   const valueRef = ref('');
@@ -13,11 +13,29 @@ export function useReactiveEventProperty(modeler: any, activityId: string, prope
 
       if (bo != null) {
         valueRef.value = bo.businessObject.get(property)
-        console.log('valueRef', valueRef.value);
       }
     }
   })
 
+  watch(() => valueRef.value, (newValue: string) => {
+    const command = modeler.get('commandStack');
+    const elementRegistry = modeler.get('elementRegistry');
+
+    // Retrieve the element by its ID
+    const element = elementRegistry.get(activityId);
+
+    if (element) {
+      // Execute a command to update the element's property
+      command.execute('element.updateProperties', {
+        element: element,
+        properties: {
+          [property]: newValue
+        }
+      });
+    } else {
+      console.error(`Element with ID ${activityId} not found.`);
+    }
+  })
 
   return { valueRef }
 };
