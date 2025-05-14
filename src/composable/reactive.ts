@@ -2,6 +2,8 @@ import { ref, watch } from "vue";
 
 export function useReactiveEventProperty(modeler: any, activityId: string, property: string) {
   const valueRef = ref('');
+  const command = modeler.get('commandStack');
+  const elementRegistry = modeler.get('elementRegistry');
 
   function getBusinessObject(element: any) {
     return (element && element.buesinessObject) || element;
@@ -18,14 +20,8 @@ export function useReactiveEventProperty(modeler: any, activityId: string, prope
   })
 
   watch(() => valueRef.value, (newValue: string) => {
-    const command = modeler.get('commandStack');
-    const elementRegistry = modeler.get('elementRegistry');
-
-    // Retrieve the element by its ID
     const element = elementRegistry.get(activityId);
-
     if (element) {
-      // Execute a command to update the element's property
       command.execute('element.updateProperties', {
         element: element,
         properties: {

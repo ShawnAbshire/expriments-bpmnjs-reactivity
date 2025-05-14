@@ -2,28 +2,22 @@
   <div id="canvas" ref="wrapper" class="w-[75%] h-full "> </div>
   <div id="js-properties-panel" class="w-[25%] border" />
 
-  <div class="absolute left-10 bottom-32">
-    <input class="border rounded p-2" v-model="propertyValue" />
-  </div>
-
-  <button class="absolute left-10 bottom-10 z-10 px-5 py-2 bg-red-100">Export</button>
-  <div class="absolute z-10 bottom-20 left-10 px-5 py-2 bg-blue-100">propertyValue: {{ propertyValue }}</div>
+  <test-template v-if="imported" :modeler="modeler" @export-model="exportButton" />
 </template>
 
-
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import Modeler from 'bpmn-js/lib/Modeler';
+import { onMounted, ref } from 'vue';
 import {
   BpmnPropertiesPanelModule,
   BpmnPropertiesProviderModule,
   ZeebePropertiesProviderModule
 } from 'bpmn-js-properties-panel';
 import ZeebeBpmnModdle from 'zeebe-bpmn-moddle/resources/zeebe.json';
-import { useReactiveEventProperty } from './composable/reactive';
+import TestTemplate from './components/test-component.vue';
+import BpmnModeler from 'bpmn-js/lib/Modeler';
 
 const wrapper = ref<HTMLDivElement>();
-let modeler: unknown = null;
+let modeler: any = null;
 const initialDiagram = `
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1qzjoog" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="17.11.1">
@@ -65,11 +59,10 @@ const initialDiagram = `
 </bpmn:definitions>
 `;
 
-const propertyValue = ref('');
-
+const imported = ref(false);
 onMounted(() => {
   try {
-    modeler = new Modeler({
+    modeler = new BpmnModeler({
       container: wrapper.value,
       propertiesPanel: {
         parent: '#js-properties-panel'
@@ -86,19 +79,15 @@ onMounted(() => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (modeler as any).importXML(initialDiagram);
-
-    const { valueRef } = useReactiveEventProperty(modeler, 'Activity_0bry28l', 'name');
-
-    watch(() => valueRef.value, (newValue: string, _oldValue: string) => {
-      propertyValue.value = newValue
-    });
-
-    watch(() => propertyValue.value, (newValue) => {
-      valueRef.value = newValue;
-    });
-
+    imported.value = true;
   } catch (err) {
     console.error('error loading BPMN 2.0 XML', err);
   }
 });
+
+async function exportButton() {
+  const { xml } = await modeler.saveXML({ format: true });
+  console.log(xml);
+}
+
 </script>
