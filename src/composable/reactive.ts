@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { onUnmounted, ref, watch } from "vue";
 
 export function useReactiveEventProperty(modeler: any, activityId: string, property: string) {
   const valueRef = ref('');
@@ -9,15 +9,16 @@ export function useReactiveEventProperty(modeler: any, activityId: string, prope
     return (element && element.buesinessObject) || element;
   }
 
-  modeler.on('element.changed', (_changed: any) => {
-    if (_changed.element.id === activityId) {
-      const bo = getBusinessObject(_changed.element);
-
+  const onElementChanged = (changed: any) => {
+    if (changed.element.id === activityId) {
+      const bo = getBusinessObject(changed.element);
       if (bo != null) {
         valueRef.value = bo.businessObject.get(property)
       }
     }
-  })
+  }
+
+  modeler.on('element.changed', onElementChanged);
 
   watch(() => valueRef.value, (newValue: string) => {
     const element = elementRegistry.get(activityId);
@@ -32,6 +33,11 @@ export function useReactiveEventProperty(modeler: any, activityId: string, prope
       console.error(`Element with ID ${activityId} not found.`);
     }
   })
+
+  onUnmounted(() => {
+    console.log('ok we removing the change listener')
+    modeler.off('element.changed', onElementChanged);
+  });
 
   return { valueRef }
 };
